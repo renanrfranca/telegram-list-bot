@@ -14,11 +14,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class ListBot extends TelegramLongPollingBot {
     private static final Logger logger = LoggerFactory.getLogger(ListBot.class);
 
-    @Value("${bot.token}")
-    private String token;
-
-    @Value("${bot.username}")
-    private String username;
+    private final String token = System.getenv("TELEGRAM_BOT_TOKEN");
+    private final String username = System.getenv("TELEGRAM_BOT_USERNAME");
 
     @Override
     public String getBotToken() {
