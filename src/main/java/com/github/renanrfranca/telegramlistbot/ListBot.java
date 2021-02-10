@@ -13,6 +13,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
 public class ListBot extends TelegramLongPollingBot {
+    public static final String BOT_HANDLE =  "@rrflistbot";
+
     public static final String START =  "/start";
     public static final String HELP =  "/help";
     public static final String NEW_LIST =  "/new_list";
@@ -40,6 +42,8 @@ public class ListBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             Message receivedMessage = update.getMessage();
             logger.info(receivedMessage.toString());
+
+            String command = receivedMessage.getText().replace(BOT_HANDLE, "");
 
             switch (receivedMessage.getText()) {
                 case START:
