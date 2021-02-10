@@ -12,6 +12,11 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
 public class ListBot extends TelegramLongPollingBot {
+    public static final String START =  "/start";
+    public static final String HELP =  "/help";
+    public static final String NEW_LIST =  "/new_list";
+    public static final String NEW_ITEM =  "/new_item";
+
     private static final Logger logger = LoggerFactory.getLogger(ListBot.class);
 
     private final String token = System.getenv("TELEGRAM_BOT_TOKEN");
@@ -30,7 +35,20 @@ public class ListBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            logger.info(String.valueOf(update.getMessage()));
+            Message receivedMessage = update.getMessage();
+            logger.info(receivedMessage.toString());
+
+            switch (receivedMessage.getText()) {
+                case START:
+                case HELP:
+                    handleHelp(receivedMessage);
+                case NEW_LIST:
+                    handleNewList(receivedMessage);
+                case NEW_ITEM:
+                    handleNewItem(receivedMessage);
+            }
+
+
 //            Message message = update.getMessage();
 //            SendMessage response = new SendMessage();
 //            Long chatId = message.getChatId();
@@ -46,5 +64,28 @@ public class ListBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleHelp (Message message) {
+            SendMessage response = new SendMessage();
+            response.setChatId(message.getChatId().toString());
+            response.setText(
+                    "Bem vindo ao listbot!" +
+                            "\nPara criar uma nova lista, digite " + NEW_LIST +
+                            "\nPara adicionar um item a uma lista, digite " + NEW_ITEM
+            );
+            try {
+                execute(response);
+                logger.info("Help reply sent");
+            } catch (TelegramApiException e) {
+                logger.error("Failed to send message due to error: {}", e.getMessage());
+            }
+    }
+
+    private void handleNewList(Message message) {
+
+    }
+
+    private void handleNewItem(Message message) {
+
+    }
 
 }
