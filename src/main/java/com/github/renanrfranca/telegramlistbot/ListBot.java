@@ -45,27 +45,17 @@ public class ListBot extends TelegramLongPollingBot {
                 case START:
                 case HELP:
                     handleHelp(receivedMessage);
+                    break;
                 case NEW_LIST:
                     handleNewList(receivedMessage);
+                    break;
                 case NEW_ITEM:
                     handleNewItem(receivedMessage);
+                    break;
                 case ROLL:
                     handleRoll(receivedMessage);
+                    break;
             }
-
-
-//            Message message = update.getMessage();
-//            SendMessage response = new SendMessage();
-//            Long chatId = message.getChatId();
-//            response.setChatId(String.valueOf(chatId));
-//            String text = message.getText();
-//            response.setText(text);
-//            try {
-//                execute(response);
-//                logger.info("Sent message \"{}\" to {}", text, chatId);
-//            } catch (TelegramApiException e) {
-//                logger.error("Failed to send message \"{}\" to {} due to error: {}", text, chatId, e.getMessage());
-//            }
         }
     }
 
@@ -100,7 +90,7 @@ public class ListBot extends TelegramLongPollingBot {
         SendMessage response = new SendMessage();
         response.setChatId(message.getChatId().toString());
         response.setReplyToMessageId(message.getMessageId());
-        response.setText(message.getChat().getFirstName() + " rollou " + roll);
+        response.setText(message.getFrom().getFirstName() + " rollou " + roll);
         try {
             execute(response);
             logger.info("Help reply sent");
