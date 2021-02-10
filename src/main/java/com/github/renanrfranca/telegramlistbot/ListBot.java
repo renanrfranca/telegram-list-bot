@@ -1,5 +1,6 @@
 package com.github.renanrfranca.telegramlistbot;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,8 @@ public class ListBot extends TelegramLongPollingBot {
     public static final String HELP =  "/help";
     public static final String NEW_LIST =  "/new_list";
     public static final String NEW_ITEM =  "/new_item";
+    public static final String ROLL =  "/roll";
+    public static final int MAX_ROLL =  999999;
 
     private static final Logger logger = LoggerFactory.getLogger(ListBot.class);
 
@@ -46,6 +49,8 @@ public class ListBot extends TelegramLongPollingBot {
                     handleNewList(receivedMessage);
                 case NEW_ITEM:
                     handleNewItem(receivedMessage);
+                case ROLL:
+                    handleRoll(receivedMessage);
             }
 
 
@@ -88,4 +93,19 @@ public class ListBot extends TelegramLongPollingBot {
 
     }
 
+    private void handleRoll(Message message) {
+        int random = (int) (Math.random() * MAX_ROLL) + 1;
+        String roll = StringUtils.leftPad(String.valueOf(random), 6);
+
+        SendMessage response = new SendMessage();
+        response.setChatId(message.getChatId().toString());
+        response.setReplyToMessageId(message.getMessageId());
+        response.setText(message.getChat().getFirstName() + " rollou " + roll);
+        try {
+            execute(response);
+            logger.info("Help reply sent");
+        } catch (TelegramApiException e) {
+            logger.error("Failed to send message due to error: {}", e.getMessage());
+        }
+    }
 }

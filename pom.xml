@@ -51,6 +51,11 @@
             <artifactId>telegram-spring-boot-starter</artifactId>
             <version>0.24</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
