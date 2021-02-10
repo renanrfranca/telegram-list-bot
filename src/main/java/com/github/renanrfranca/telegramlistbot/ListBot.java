@@ -29,19 +29,20 @@ public class ListBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
-            Message message = update.getMessage();
-            SendMessage response = new SendMessage();
-            Long chatId = message.getChatId();
-            response.setChatId(String.valueOf(chatId));
-            String text = message.getText();
-            response.setText(text);
-            try {
-                execute(response);
-                logger.info("Sent message \"{}\" to {}", text, chatId);
-            } catch (TelegramApiException e) {
-                logger.error("Failed to send message \"{}\" to {} due to error: {}", text, chatId, e.getMessage());
-            }
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            logger.info(String.valueOf(update.getMessage()));
+//            Message message = update.getMessage();
+//            SendMessage response = new SendMessage();
+//            Long chatId = message.getChatId();
+//            response.setChatId(String.valueOf(chatId));
+//            String text = message.getText();
+//            response.setText(text);
+//            try {
+//                execute(response);
+//                logger.info("Sent message \"{}\" to {}", text, chatId);
+//            } catch (TelegramApiException e) {
+//                logger.error("Failed to send message \"{}\" to {} due to error: {}", text, chatId, e.getMessage());
+//            }
         }
     }
 

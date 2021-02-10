@@ -1,3 +1,3 @@
-bot:
-  token: test
-  username: test
+spring:
+  datasource.url: jdbc:h2:mem:testdb
+  data.jpa.repositories.bootstrap-mode: default
