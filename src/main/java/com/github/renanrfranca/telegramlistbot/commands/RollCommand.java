@@ -23,6 +23,7 @@ public class RollCommand implements Command {
         response.setReplyToMessageId(message.getMessageId());
         response.setText(message.getFrom().getFirstName() + " rollou " + roll);
         try {
+            ListBot.logger.info("Sending: {}", response.getText());
             listBot.execute(response);
         } catch (TelegramApiException e) {
             e.printStackTrace();

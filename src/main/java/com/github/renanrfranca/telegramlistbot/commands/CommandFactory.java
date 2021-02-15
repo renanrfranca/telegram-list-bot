@@ -1,5 +1,6 @@
 package com.github.renanrfranca.telegramlistbot.commands;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
 public class CommandFactory {
@@ -14,7 +15,8 @@ public class CommandFactory {
         commands.put("roll", RollCommand.class);
     }
 
-    public static Command create(String commandText) throws IllegalAccessException, InstantiationException {
-        return commands.get(commandText).newInstance();
+    public static Command create(String commandText)
+            throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        return commands.get(commandText).getDeclaredConstructor().newInstance();
     }
 }
