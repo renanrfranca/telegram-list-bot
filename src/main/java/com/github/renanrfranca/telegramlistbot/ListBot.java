@@ -69,7 +69,7 @@ public class ListBot extends AbilityBot {
                 .input(0)
                 .action(ctx -> {
                     int random = (int) (Math.random() * MAX_ROLL) + 1;
-                    String roll = String.format("%05d", random);
+                    String roll = String.format("%06d", random);
                     silent.send(
                             ctx.update().getMessage().getFrom().getFirstName() + " rollou " + roll,
                             ctx.chatId()
