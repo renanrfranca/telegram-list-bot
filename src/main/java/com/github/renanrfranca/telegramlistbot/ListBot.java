@@ -30,6 +30,9 @@ public class ListBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()) {
+            logger.info(update.toString());
+            logger.info(update.getMessage().toString());
+
             Message message = update.getMessage();
             SendMessage response = new SendMessage();
             Long chatId = message.getChatId();
