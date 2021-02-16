@@ -15,7 +15,7 @@ public class ListBot extends AbilityBot {
     public static final Logger logger = LoggerFactory.getLogger(ListBot.class);
 
     public static final String BOT_HANDLE = "@rrflistbot";
-    public static final int MAX_ROLL =  999999;
+    public static final int MAX_ROLL = 999999;
     private static final String BOT_TONKEN = System.getenv("TELEGRAM_BOT_TOKEN");
     private static final String BOT_USERNAME = System.getenv("TELEGRAM_BOT_USERNAME");
 
@@ -46,6 +46,35 @@ public class ListBot extends AbilityBot {
                 .locality(Locality.ALL)
                 .input(0)
                 .action(ctx -> silent.send("Help text", ctx.chatId()))
+                .build();
+    }
+
+    public Ability showStart() {
+        return Ability.builder()
+                .name("start")
+                .info("Display start text")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .input(0)
+                .action(ctx -> silent.send("Help text", ctx.chatId()))
+                .build();
+    }
+
+    public Ability roll() {
+        return Ability.builder()
+                .name("roll")
+                .info("roll 6 digit dice")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .input(0)
+                .action(ctx -> {
+                    int random = (int) (Math.random() * MAX_ROLL) + 1;
+                    String roll = String.format("%05d", random);
+                    silent.send(
+                            ctx.update().getMessage().getFrom().getFirstName() + " rollou " + roll,
+                            ctx.chatId()
+                    );
+                })
                 .build();
     }
 
