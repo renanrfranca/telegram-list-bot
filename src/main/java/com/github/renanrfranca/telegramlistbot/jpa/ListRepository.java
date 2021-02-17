@@ -1,7 +1,9 @@
 package com.github.renanrfranca.telegramlistbot.jpa;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ListRepository extends PagingAndSortingRepository<List, Long> {
+@Repository
+public interface ListRepository extends JpaRepository<List, Long> {
 
 }

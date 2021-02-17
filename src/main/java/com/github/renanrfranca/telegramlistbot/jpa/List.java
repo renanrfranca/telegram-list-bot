@@ -13,10 +13,14 @@ public class List {
     @OneToMany(mappedBy = "list")
     private java.util.List<Item> itens;
 
+    @ManyToOne
+    @JoinColumn(name="chat_id")
+    private Chat chat;
+
     public List() {
     }
 
-    public List(String title, String description) {
+    public List(Chat chat, String title, String description) {
         this.title = title;
         this.description = description;
     }

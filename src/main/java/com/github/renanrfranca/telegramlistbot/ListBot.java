@@ -1,14 +1,21 @@
 package com.github.renanrfranca.telegramlistbot;
 
+import com.github.renanrfranca.telegramlistbot.jpa.Chat;
+import com.github.renanrfranca.telegramlistbot.jpa.ChatRepository;
+import com.github.renanrfranca.telegramlistbot.jpa.List;
+import com.github.renanrfranca.telegramlistbot.jpa.ListRepository;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.objects.Locality;
 import org.telegram.abilitybots.api.objects.Privacy;
 import org.telegram.abilitybots.api.sender.MessageSender;
+
+import java.util.Optional;
 
 @Component
 public class ListBot extends AbilityBot {
@@ -18,6 +25,12 @@ public class ListBot extends AbilityBot {
     public static final int MAX_ROLL = 999999;
     private static final String BOT_TONKEN = System.getenv("TELEGRAM_BOT_TOKEN");
     private static final String BOT_USERNAME = System.getenv("TELEGRAM_BOT_USERNAME");
+
+    @Autowired
+    private ListRepository listRepository;
+
+    @Autowired
+    private ChatRepository chatRepository;
 
     protected ListBot() {
         super(BOT_TONKEN, BOT_USERNAME);
@@ -76,6 +89,30 @@ public class ListBot extends AbilityBot {
                     );
                 })
                 .build();
+    }
+
+    public Ability addList() {
+        return Ability.builder()
+                .name("addlist")
+                .info("add a new list to this chat: /addlist \"listname\"")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .input(2)
+                .action(ctx -> addList(
+                        ctx.firstArg(),
+                        ctx.secondArg(),
+                        ctx.chatId()
+                ))
+                .build();
+    }
+
+    public void addList(String title, String description, Long chatId) {
+        Chat chat;
+        Optional<Chat> optionalChat = chatRepository.findById(chatId);
+        chat = optionalChat.orElse(chatRepository.save(new Chat(chatId)));
+
+        List list = new List(chat, title, description);
+        listRepository.save(list);
     }
 
     @VisibleForTesting
