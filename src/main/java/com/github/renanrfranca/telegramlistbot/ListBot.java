@@ -14,16 +14,19 @@ import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.objects.Locality;
 import org.telegram.abilitybots.api.objects.Privacy;
 import org.telegram.abilitybots.api.sender.MessageSender;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Optional;
+import java.util.Random;
 
 @Component
 public class ListBot extends AbilityBot {
     public static final Logger logger = LoggerFactory.getLogger(ListBot.class);
 
     public static final String BOT_HANDLE = "@rrflistbot";
+    private final Random random = new Random();
     public static final int MAX_ROLL = 999999;
-    private static final String BOT_TONKEN = System.getenv("TELEGRAM_BOT_TOKEN");
+    private static final String BOT_TOKEN = System.getenv("TELEGRAM_BOT_TOKEN");
     private static final String BOT_USERNAME = System.getenv("TELEGRAM_BOT_USERNAME");
 
     @Autowired
@@ -33,12 +36,12 @@ public class ListBot extends AbilityBot {
     private ChatRepository chatRepository;
 
     protected ListBot() {
-        super(BOT_TONKEN, BOT_USERNAME);
+        super(BOT_TOKEN, BOT_USERNAME);
     }
 
     @Override
     public String getBotToken() {
-        return BOT_TONKEN;
+        return BOT_TOKEN;
     }
 
     @Override
@@ -81,12 +84,12 @@ public class ListBot extends AbilityBot {
                 .locality(Locality.ALL)
                 .input(0)
                 .action(ctx -> {
-                    int random = (int) (Math.random() * MAX_ROLL) + 1;
+                    int random = this.random.nextInt(MAX_ROLL);
                     String roll = String.format("%06d", random);
-                    silent.send(
-                            ctx.update().getMessage().getFrom().getFirstName() + " rollou " + roll,
-                            ctx.chatId()
-                    );
+                    String text = ctx.update().getMessage().getFrom().getFirstName() + " rollou " + roll;
+                    SendMessage sendMessage = new SendMessage(ctx.chatId().toString(), text);
+                    sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
+                    silent.execute(sendMessage);
                 })
                 .build();
     }
