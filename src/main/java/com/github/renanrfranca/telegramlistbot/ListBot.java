@@ -118,6 +118,15 @@ public class ListBot extends AbilityBot {
         listRepository.save(list);
     }
 
+    public void additem(String title, String description, Long chatId) {
+        Chat chat;
+        Optional<Chat> optionalChat = chatRepository.findById(chatId);
+        chat = optionalChat.orElse(chatRepository.save(new Chat(chatId)));
+
+        List list = new List(chat, title, description);
+        listRepository.save(list);
+    }
+
     @VisibleForTesting
     void setSender(MessageSender sender) {
         this.sender = sender;
