@@ -97,15 +97,27 @@ public class ListBot extends AbilityBot {
     public Ability addList() {
         return Ability.builder()
                 .name("addlist")
-                .info("add a new list to this chat: /addlist \"listname\"")
+                .info("add a new list to this chat: /addlist \"listname\" \"listdescription\"")
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
                 .input(2)
-                .action(ctx -> addList(
-                        ctx.firstArg(),
-                        ctx.secondArg(),
-                        ctx.chatId()
-                ))
+                .action(ctx -> {
+                    addList(ctx.firstArg(), ctx.secondArg(), ctx.chatId());
+                    silent.send("Lista criada:" + ctx.firstArg(), ctx.chatId());
+                })
+                .build();
+    }
+
+    public Ability showLists() {
+        return Ability.builder()
+                .name("showlists")
+                .info("Shows all lists in the current chat.")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .action(ctx -> {
+                    java.util.List<List> lists = listRepository.findAllByChatId(ctx.chatId());
+                    silent.send(lists.toString(), ctx.chatId());
+                })
                 .build();
     }
 
