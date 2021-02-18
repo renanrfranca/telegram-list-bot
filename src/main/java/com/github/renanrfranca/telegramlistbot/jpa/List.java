@@ -17,10 +17,10 @@ public class List {
     @JoinColumn(name="chat_id")
     private Chat chat;
 
-    public List() {
-    }
+    public List() {}
 
     public List(Chat chat, String title, String description) {
+        this.chat = chat;
         this.title = title;
         this.description = description;
     }

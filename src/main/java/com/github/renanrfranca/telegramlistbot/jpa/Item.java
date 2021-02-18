@@ -12,9 +12,7 @@ public class Item {
     @JoinColumn(name="list_id")
     private List list;
 
-    public Item() {
-
-    }
+    public Item() {}
 
     public Item(String description, List list) {
         this.description = description;

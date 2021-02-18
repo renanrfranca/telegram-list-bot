@@ -10,6 +10,8 @@ public class Chat {
     @OneToMany(mappedBy = "chat")
     private java.util.List<List> lists;
 
+    public Chat() {}
+
     public Chat(Long id) {
         this.id = id;
     }
