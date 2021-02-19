@@ -103,7 +103,7 @@ public class ListBot extends AbilityBot {
                 .input(2)
                 .action(ctx -> {
                     addList(ctx.firstArg(), ctx.secondArg(), ctx.chatId());
-                    silent.send("Lista criada:" + ctx.firstArg(), ctx.chatId());
+                    silent.send("Lista criada: " + ctx.firstArg(), ctx.chatId());
                 })
                 .build();
     }
@@ -116,7 +116,17 @@ public class ListBot extends AbilityBot {
                 .locality(Locality.ALL)
                 .action(ctx -> {
                     java.util.List<List> lists = listRepository.findAllByChatId(ctx.chatId());
-                    silent.send(lists.toString(), ctx.chatId());
+                    if (! lists.isEmpty()) {
+                        StringBuilder stringBuilder = new StringBuilder();
+                        stringBuilder.append("**Listas criadas:**\n");
+                        lists.forEach((list) -> {
+                            stringBuilder.append(list.getTitle()).append(" - ").append(list.getDescription());
+                            stringBuilder.append("\n");
+                        });
+                        silent.send(stringBuilder.toString(), ctx.chatId());
+                    } else {
+                        silent.send("Ainda não há listas nesse chat. Crie uma agora com o comando /addlist!", ctx.chatId());
+                    }
                 })
                 .build();
     }
