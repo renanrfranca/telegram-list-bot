@@ -2,7 +2,7 @@ package com.github.renanrfranca.telegramlistbot;
 
 import com.github.renanrfranca.telegramlistbot.jpa.Chat;
 import com.github.renanrfranca.telegramlistbot.jpa.ChatRepository;
-import com.github.renanrfranca.telegramlistbot.jpa.List;
+import com.github.renanrfranca.telegramlistbot.jpa.ItemList;
 import com.github.renanrfranca.telegramlistbot.jpa.ListRepository;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -11,13 +11,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
+import org.telegram.abilitybots.api.objects.Flag;
 import org.telegram.abilitybots.api.objects.Locality;
 import org.telegram.abilitybots.api.objects.Privacy;
 import org.telegram.abilitybots.api.sender.MessageSender;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ForceReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
+import java.util.function.Predicate;
 
 @Component
 public class ListBot extends AbilityBot {
@@ -97,15 +104,35 @@ public class ListBot extends AbilityBot {
     public Ability addList() {
         return Ability.builder()
                 .name("addlist")
-                .info("add a new list to this chat: /addlist \"listname\" \"listdescription\"")
+                .info("Add a new list to this chat")
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
-                .input(2)
                 .action(ctx -> {
-                    addList(ctx.firstArg(), ctx.secondArg(), ctx.chatId());
-                    silent.send("Lista criada: " + ctx.firstArg(), ctx.chatId());
+                    SendMessage sendMessage = new SendMessage(ctx.chatId().toString(), "Informe o título da lista");
+                    sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
+                    sendMessage.setReplyMarkup(new ForceReplyKeyboard(true, true));
+                    silent.execute(sendMessage);
                 })
+                .reply(
+                    upd -> {
+                        addList(upd.getMessage().getText(), upd.getMessage().getChatId());
+                        silent.send("Lista criada: " + upd.getMessage().getText(), upd.getMessage().getChatId());
+                    },
+                    Flag.MESSAGE,
+                    Flag.REPLY,
+                    isReplyToBot(),
+                    isReplyToMessage("Informe o título da lista")
+                )
                 .build();
+    }
+
+    public void addList(String title, Long chatId) {
+        Chat chat;
+        Optional<Chat> optionalChat = chatRepository.findById(chatId);
+        chat = optionalChat.orElse(chatRepository.save(new Chat(chatId)));
+
+        ItemList itemList = new ItemList(chat, title);
+        listRepository.save(itemList);
     }
 
     public Ability showLists() {
@@ -115,13 +142,12 @@ public class ListBot extends AbilityBot {
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
                 .action(ctx -> {
-                    java.util.List<List> lists = listRepository.findAllByChatId(ctx.chatId());
-                    if (! lists.isEmpty()) {
+                    List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
+                    if (! itemLists.isEmpty()) {
                         StringBuilder stringBuilder = new StringBuilder();
-                        stringBuilder.append("**Listas criadas:**\n");
-                        lists.forEach((list) -> {
-                            stringBuilder.append(list.getTitle()).append(" - ").append(list.getDescription());
-                            stringBuilder.append("\n");
+                        stringBuilder.append("*Listas do chat:*\n");
+                        itemLists.forEach((itemList) -> {
+                            stringBuilder.append(itemList.getTitle()).append("\n");
                         });
                         silent.send(stringBuilder.toString(), ctx.chatId());
                     } else {
@@ -131,22 +157,71 @@ public class ListBot extends AbilityBot {
                 .build();
     }
 
-    public void addList(String title, String description, Long chatId) {
-        Chat chat;
-        Optional<Chat> optionalChat = chatRepository.findById(chatId);
-        chat = optionalChat.orElse(chatRepository.save(new Chat(chatId)));
+    public Ability addItem() {
+        return Ability.builder()
+                .name("addlist")
+                .info("Add a new list to this chat")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .action(ctx -> {
+                    List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
+                    ReplyKeyboard listKeyboard = this.buildListKeyboard(itemLists);
 
-        List list = new List(chat, title, description);
-        listRepository.save(list);
+                    SendMessage sendMessage = new SendMessage(
+                            ctx.chatId().toString(),
+                            "Selecione a lista a qual deseja adcionar itens."
+                    );
+                    sendMessage.setReplyMarkup(listKeyboard);
+
+                    sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
+                    sendMessage.setReplyMarkup(new ForceReplyKeyboard(true, true));
+                    silent.execute(sendMessage);
+                })
+                .reply(
+                        upd -> {
+                            addList(upd.getMessage().getText(), upd.getMessage().getChatId());
+                            silent.send("Lista criada: " + upd.getMessage().getText(), upd.getMessage().getChatId());
+                        },
+                        Flag.MESSAGE,
+                        Flag.REPLY,
+                        isReplyToBot(),
+                        isReplyToMessage("Informe o título da lista")
+                )
+                .build();
     }
 
-    public void additem(String title, String description, Long chatId) {
+    private ReplyKeyboard buildListKeyboard(List<ItemList> itemlists) {
+        var markupBuilder = InlineKeyboardMarkup.builder();
+
+        itemlists.forEach(itemList -> {
+            InlineKeyboardButton button = InlineKeyboardButton.builder()
+                    .text(itemList.getTitle())
+                    .callbackData(itemList.getId().toString())
+                    .build();
+            markupBuilder.keyboardRow(Collections.singletonList(button));
+        });
+
+        return markupBuilder.build();
+    }
+
+    public void addItem(String title, String description, Long chatId) {
         Chat chat;
         Optional<Chat> optionalChat = chatRepository.findById(chatId);
         chat = optionalChat.orElse(chatRepository.save(new Chat(chatId)));
 
-        List list = new List(chat, title, description);
-        listRepository.save(list);
+        ItemList itemList = new ItemList(chat, title);
+        listRepository.save(itemList);
+    }
+
+    private Predicate<Update> isReplyToMessage(String message) {
+        return upd -> {
+            Message reply = upd.getMessage().getReplyToMessage();
+            return reply.hasText() && reply.getText().equalsIgnoreCase(message);
+        };
+    }
+
+    private Predicate<Update> isReplyToBot() {
+        return upd -> upd.getMessage().getReplyToMessage().getFrom().getUserName().equalsIgnoreCase(getBotUsername());
     }
 
     @VisibleForTesting

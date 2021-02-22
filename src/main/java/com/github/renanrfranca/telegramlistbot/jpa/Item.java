@@ -6,21 +6,21 @@ import javax.persistence.*;
 public class Item {
     @Id
     @GeneratedValue
-    private long id;
+    private Long id;
     private String description;
     @ManyToOne
     @JoinColumn(name="list_id")
-    private List list;
+    private ItemList itemList;
 
     public Item() {}
 
-    public Item(String description, List list) {
+    public Item(String description, ItemList itemList) {
         this.description = description;
-        this.list = list;
+        this.itemList = itemList;
     }
 
-    public List getList() {
-        return this.list;
+    public ItemList getList() {
+        return this.itemList;
     }
 
     public String getDescription() {
