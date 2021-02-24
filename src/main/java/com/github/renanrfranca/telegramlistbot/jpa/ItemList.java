@@ -10,7 +10,7 @@ public class ItemList {
     private Long id;
     private String title;
 
-    @OneToMany(mappedBy = "list")
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "itemList")
     private List<Item> itens;
 
     @ManyToOne
@@ -32,4 +32,11 @@ public class ItemList {
         return title;
     }
 
+    public Chat getChat() {
+        return chat;
+    }
+
+    public List<Item> getItems() {
+        return itens;
+    }
 }

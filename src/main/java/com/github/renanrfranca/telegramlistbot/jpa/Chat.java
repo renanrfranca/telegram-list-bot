@@ -16,4 +16,12 @@ public class Chat {
     public Chat(Long id) {
         this.id = id;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public List<ItemList> getItemLists() {
+        return itemLists;
+    }
 }
