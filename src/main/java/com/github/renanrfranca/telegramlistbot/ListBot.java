@@ -183,7 +183,7 @@ public class ListBot extends AbilityBot {
                     silent.execute(sendMessage);
                 },
                 isReplyToBot(),
-                isAddItemListSelection()
+                isReplyToMessage(SELECT_LIST_FOR_NEW_ITEM)
             )
             .reply(
                 upd -> {
@@ -210,7 +210,7 @@ public class ListBot extends AbilityBot {
     public Ability showList() {
         return Ability.builder()
             .name("showlist")
-            .info("Exibe os itens da lista selecionada pelo usuário")
+            .info("Displays all itens in a chosen list")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
             .action(ctx ->{
@@ -301,11 +301,6 @@ public class ListBot extends AbilityBot {
     private Predicate<Update> isReplyToBot() {
         return upd -> upd.getMessage().getChat().isUserChat()
             || upd.getMessage().getReplyToMessage().getFrom().getUserName().equalsIgnoreCase(getBotUsername());
-    }
-
-    private Predicate<Update> isAddItemListSelection() {
-        return update -> update.getMessage().getReplyToMessage().getText()
-                .equals(SELECT_LIST_FOR_NEW_ITEM);
     }
 
     private Predicate<Update> isNewItem() {
