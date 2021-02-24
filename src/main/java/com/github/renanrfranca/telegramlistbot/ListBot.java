@@ -97,7 +97,7 @@ public class ListBot extends AbilityBot {
     public Ability roll() {
         return Ability.builder()
                 .name("roll")
-                .info("roll 6 digit dice")
+                .info("Roll 6 digit dice")
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
                 .input(0)
@@ -144,28 +144,6 @@ public class ListBot extends AbilityBot {
 
         ItemList itemList = new ItemList(chat, title);
         listRepository.save(itemList);
-    }
-
-    public Ability showLists() {
-        return Ability.builder()
-                .name("showlists")
-                .info("Shows all lists in the current chat.")
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action(ctx -> {
-                    List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
-                    if (! itemLists.isEmpty()) {
-                        StringBuilder stringBuilder = new StringBuilder();
-                        stringBuilder.append("*Listas do chat:*\n");
-                        itemLists.forEach((itemList) -> {
-                            stringBuilder.append(itemList.getTitle()).append("\n");
-                        });
-                        silent.send(stringBuilder.toString(), ctx.chatId());
-                    } else {
-                        silent.send(NO_LISTS_WARNING, ctx.chatId());
-                    }
-                })
-                .build();
     }
 
     public Ability addItem() {
