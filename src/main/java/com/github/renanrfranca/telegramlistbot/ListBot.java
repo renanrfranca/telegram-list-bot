@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
+import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.objects.Flag;
 import org.telegram.abilitybots.api.objects.Locality;
 import org.telegram.abilitybots.api.objects.Privacy;
 import org.telegram.abilitybots.api.sender.MessageSender;
+import org.telegram.abilitybots.api.sender.SilentSender;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -36,12 +38,12 @@ public class ListBot extends AbilityBot {
     private static final String BOT_TOKEN = System.getenv("TELEGRAM_BOT_TOKEN");
     private static final String BOT_USERNAME = System.getenv("TELEGRAM_BOT_USERNAME");
 
-    private static final String HELP_TEXT = "Help text";
-    private static final String ASK_FOR_LIST_TITLE = "Informe o título da lista:";
-    private static final String NO_LISTS_WARNING = "Ainda não há listas nesta conversa. Você pode criar uma utilizando o comando /addlist!";
-    private static final String SELECT_LIST_FOR_NEW_ITEM = "Escolha a lista em qual deseja adcionar um novo item:";
-    private static final String ASK_FOR_ITEM_TEXT = "Informe novo item pra lista #";
-    private static final String SELECT_LIST_TO_SHOW = "Selecione a lista a ser exibida";
+    protected static final String HELP_TEXT = "Help text";
+    protected static final String ASK_FOR_LIST_TITLE = "Informe o título da lista:";
+    protected static final String NO_LISTS_WARNING = "Ainda não há listas nesta conversa. Você pode criar uma utilizando o comando /addlist!";
+    protected static final String SELECT_LIST_FOR_NEW_ITEM = "Escolha a lista em qual deseja adcionar um novo item:";
+    protected static final String ASK_FOR_ITEM_TEXT = "Informe novo item pra lista #";
+    protected static final String SELECT_LIST_TO_SHOW = "Selecione a lista a ser exibida";
 
 
     @Autowired
@@ -53,8 +55,12 @@ public class ListBot extends AbilityBot {
     @Autowired
     private ItemRepository itemRepository;
 
-    protected ListBot() {
+    public ListBot() {
         super(BOT_TOKEN, BOT_USERNAME);
+    }
+
+    public ListBot(DBContext dbContext) {
+        super(BOT_TOKEN, BOT_USERNAME, dbContext);
     }
 
     @Override
@@ -256,7 +262,7 @@ public class ListBot extends AbilityBot {
             .build();
     }
 
-    public String getFormattedList(ItemList itemList) {
+    protected String getFormattedList(ItemList itemList) {
         List<Item> items = itemList.getItems();
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -311,5 +317,10 @@ public class ListBot extends AbilityBot {
     @VisibleForTesting
     void setSender(MessageSender sender) {
         this.sender = sender;
+    }
+
+    @VisibleForTesting
+    void setSilentSender(SilentSender siletSender) {
+        this.silent = siletSender;
     }
 }
