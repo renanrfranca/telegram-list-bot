@@ -4,8 +4,6 @@ import com.github.renanrfranca.telegramlistbot.jpa.*;
 import com.github.renanrfranca.telegramlistbot.lib.CustomReplyKeyboardMarkup;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
@@ -23,16 +21,11 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ForceReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-
-import javax.persistence.EntityManager;
 import java.util.*;
 import java.util.function.Predicate;
 
 @Component
 public class ListBot extends AbilityBot {
-    public static final Logger logger = LoggerFactory.getLogger(ListBot.class);
-
-    public static final String BOT_HANDLE = "@rrflistbot";
     private final Random random = new Random();
     public static final int MAX_ROLL = 999999;
     private static final String BOT_TOKEN = System.getenv("TELEGRAM_BOT_TOKEN");
@@ -266,10 +259,8 @@ public class ListBot extends AbilityBot {
         List<Item> items = itemList.getItems();
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<b>").append(itemList.getTitle()).append("</b>\n");
-        items.forEach((item) -> {
-            stringBuilder.append("- ").append(item.getDescription()).append("\n");
-        });
+        stringBuilder.append("<b>").append(itemList.getTitle()).append("</b>");
+        items.forEach(item -> stringBuilder.append("\n- ").append(item.getDescription()));
         return stringBuilder.toString();
     }
 
@@ -320,7 +311,7 @@ public class ListBot extends AbilityBot {
     }
 
     @VisibleForTesting
-    void setSilentSender(SilentSender siletSender) {
-        this.silent = siletSender;
+    void setSilentSender(SilentSender silentSender) {
+        this.silent = silentSender;
     }
 }
