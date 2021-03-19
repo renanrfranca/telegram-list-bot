@@ -21,32 +21,32 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ForceReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-import java.util.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import java.util.function.Predicate;
 
 @Component
 public class ListBot extends AbilityBot {
-    private final Random random = new Random();
     public static final int MAX_ROLL = 999999;
-    private static final String BOT_TOKEN = System.getenv("TELEGRAM_BOT_TOKEN");
-    private static final String BOT_USERNAME = System.getenv("TELEGRAM_BOT_USERNAME");
-
     protected static final String HELP_TEXT = "Help text";
     protected static final String ASK_FOR_LIST_TITLE = "Informe o título da lista:";
     protected static final String NO_LISTS_WARNING = "Ainda não há listas nesta conversa. Você pode criar uma utilizando o comando /addlist!";
     protected static final String SELECT_LIST_FOR_NEW_ITEM = "Escolha a lista em qual deseja adcionar um novo item:";
     protected static final String ASK_FOR_ITEM_TEXT = "Informe novo item pra lista #";
     protected static final String SELECT_LIST_TO_SHOW = "Selecione a lista a ser exibida";
-
+    private static final String BOT_TOKEN = System.getenv("TELEGRAM_BOT_TOKEN");
+    private static final String BOT_USERNAME = System.getenv("TELEGRAM_BOT_USERNAME");
+    private final Random random = new Random();
+    @Autowired
+    protected ChatRepository chatRepository;
 
     @Autowired
-    private ChatRepository chatRepository;
+    protected ListRepository listRepository;
 
     @Autowired
-    private ListRepository listRepository;
-
-    @Autowired
-    private ItemRepository itemRepository;
+    protected ItemRepository itemRepository;
 
     public ListBot() {
         super(BOT_TOKEN, BOT_USERNAME);
@@ -124,135 +124,135 @@ public class ListBot extends AbilityBot {
                     silent.execute(sendMessage);
                 })
                 .reply(
-                    upd -> {
-                        addList(upd.getMessage().getText(), upd.getMessage().getChatId());
-                        silent.send("Lista criada: " + upd.getMessage().getText(), upd.getMessage().getChatId());
-                    },
-                    Flag.MESSAGE,
-                    Flag.REPLY,
-                    isReplyToBot(),
-                    isReplyToMessage(ASK_FOR_LIST_TITLE)
+                        upd -> {
+                            addList(upd.getMessage().getText(), upd.getMessage().getChatId());
+                            silent.send("Lista criada: " + upd.getMessage().getText(), upd.getMessage().getChatId());
+                        },
+                        Flag.MESSAGE,
+                        Flag.REPLY,
+                        isReplyToBot(),
+                        isReplyToMessage(ASK_FOR_LIST_TITLE)
                 )
                 .build();
     }
 
-    public void addList(String title, Long chatId) {
+    public ItemList addList(String title, Long chatId) {
         Chat chat;
         Optional<Chat> optionalChat = chatRepository.findById(chatId);
         chat = optionalChat.orElse(chatRepository.save(new Chat(chatId)));
 
         ItemList itemList = new ItemList(chat, title);
-        listRepository.save(itemList);
+        return listRepository.save(itemList);
     }
 
     public Ability addItem() {
         return Ability.builder()
-            .name("additem")
-            .info("Add a new list to this chat")
-            .privacy(Privacy.PUBLIC)
-            .locality(Locality.ALL)
-            .action(ctx -> {
-                List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
+                .name("additem")
+                .info("Add a new list to this chat")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .action(ctx -> {
+                    List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
 
-                if (itemLists.isEmpty()) {
-                    silent.send(NO_LISTS_WARNING, ctx.chatId());
-                    return;
-                }
-
-                ReplyKeyboard listKeyboard = this.buildListKeyboard(itemLists);
-
-                SendMessage sendMessage = new SendMessage(
-                        ctx.chatId().toString(),
-                        SELECT_LIST_FOR_NEW_ITEM
-                );
-                sendMessage.setReplyMarkup(listKeyboard);
-
-                sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
-                silent.execute(sendMessage);
-            })
-            .reply(
-                upd -> {
-                    String[] split = upd.getMessage().getText().split(" #");
-                    if (split.length < 2 || ! StringUtils.isNumeric(split[split.length - 1])) {
+                    if (itemLists.isEmpty()) {
+                        silent.send(NO_LISTS_WARNING, ctx.chatId());
                         return;
                     }
-                    SendMessage sendMessage = new SendMessage(upd.getMessage().getChatId().toString(), ASK_FOR_ITEM_TEXT + split[split.length - 1]);
-                    sendMessage.setReplyToMessageId(upd.getMessage().getMessageId());
-                    sendMessage.setReplyMarkup(new ForceReplyKeyboard(true, true));
+
+                    ReplyKeyboard listKeyboard = this.buildListKeyboard(itemLists);
+
+                    SendMessage sendMessage = new SendMessage(
+                            ctx.chatId().toString(),
+                            SELECT_LIST_FOR_NEW_ITEM
+                    );
+                    sendMessage.setReplyMarkup(listKeyboard);
+
+                    sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
                     silent.execute(sendMessage);
-                },
-                isReplyToBot(),
-                isReplyToMessage(SELECT_LIST_FOR_NEW_ITEM)
-            )
-            .reply(
-                upd -> {
-                    String itemText = upd.getMessage().getText();
-                    String[] split = upd.getMessage().getReplyToMessage().getText().split(" #");
-                    Long listId = Long.valueOf(split[split.length - 1]);
-                    Optional<ItemList> itemList = listRepository.findById(listId);
-                    if (itemList.isPresent()) {
-                        if (itemList.get().getChat().getId().equals(upd.getMessage().getChatId())) {
-                            addItem(itemText, itemList.get());
-                            itemList = listRepository.findById(listId);
-                            SendMessage message = new SendMessage(upd.getMessage().getChatId().toString(), getFormattedList(itemList.get()));
-                            message.setParseMode(ParseMode.HTML);
-                            silent.execute(message);
-                        }
-                    }
-                },
-                isReplyToBot(),
-                isNewItem()
-            )
-            .build();
+                })
+                .reply(
+                        upd -> {
+                            String[] split = upd.getMessage().getText().split(" #");
+                            if (split.length < 2 || !StringUtils.isNumeric(split[split.length - 1])) {
+                                return;
+                            }
+                            SendMessage sendMessage = new SendMessage(upd.getMessage().getChatId().toString(), ASK_FOR_ITEM_TEXT + split[split.length - 1]);
+                            sendMessage.setReplyToMessageId(upd.getMessage().getMessageId());
+                            sendMessage.setReplyMarkup(new ForceReplyKeyboard(true, true));
+                            silent.execute(sendMessage);
+                        },
+                        isReplyToBot(),
+                        isReplyToMessage(SELECT_LIST_FOR_NEW_ITEM)
+                )
+                .reply(
+                        upd -> {
+                            String itemText = upd.getMessage().getText();
+                            String[] split = upd.getMessage().getReplyToMessage().getText().split(" #");
+                            Long listId = Long.valueOf(split[split.length - 1]);
+                            Optional<ItemList> itemList = listRepository.findById(listId);
+                            if (itemList.isPresent()) {
+                                if (itemList.get().getChat().getId().equals(upd.getMessage().getChatId())) {
+                                    addItem(itemText, itemList.get());
+                                    itemList = listRepository.findById(listId);
+                                    SendMessage message = new SendMessage(upd.getMessage().getChatId().toString(), getFormattedList(itemList.get()));
+                                    message.setParseMode(ParseMode.HTML);
+                                    silent.execute(message);
+                                }
+                            }
+                        },
+                        isReplyToBot(),
+                        isNewItem()
+                )
+                .build();
     }
 
     public Ability showList() {
         return Ability.builder()
-            .name("showlist")
-            .info("Displays all itens in a chosen list")
-            .privacy(Privacy.PUBLIC)
-            .locality(Locality.ALL)
-            .action(ctx ->{
-                List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
+                .name("showlist")
+                .info("Displays all itens in a chosen list")
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .action(ctx -> {
+                    List<ItemList> itemLists = listRepository.findAllByChatId(ctx.chatId());
 
-                if (itemLists.isEmpty()) {
-                    silent.send(NO_LISTS_WARNING, ctx.chatId());
-                    return;
-                }
-
-                SendMessage sendMessage = new SendMessage(
-                        ctx.chatId().toString(),
-                        SELECT_LIST_TO_SHOW
-                );
-                sendMessage.setReplyMarkup(this.buildListKeyboard(itemLists));
-
-                sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
-                silent.execute(sendMessage);
-            })
-            .reply(
-                upd -> {
-                    String[] split = upd.getMessage().getText().split(" #");
-                    if (split.length < 2 || ! StringUtils.isNumeric(split[split.length - 1])) {
+                    if (itemLists.isEmpty()) {
+                        silent.send(NO_LISTS_WARNING, ctx.chatId());
                         return;
                     }
 
-                    Long listId = Long.valueOf(split[split.length - 1]);
-                    Optional<ItemList> optionalItemList = listRepository.findById(listId);
+                    SendMessage sendMessage = new SendMessage(
+                            ctx.chatId().toString(),
+                            SELECT_LIST_TO_SHOW
+                    );
+                    sendMessage.setReplyMarkup(this.buildListKeyboard(itemLists));
 
-                    if (
-                        optionalItemList.isPresent()
-                        && optionalItemList.get().getChat().getId().equals(upd.getMessage().getChatId())
-                    ) {
-                        ItemList itemList = optionalItemList.get();
-                        SendMessage message = new SendMessage(upd.getMessage().getChatId().toString(), getFormattedList(itemList));
-                        message.setParseMode(ParseMode.HTML);
-                        silent.execute(message);
-                    }
-                },
-                isReplyToBot(),
-                isReplyToMessage(SELECT_LIST_TO_SHOW)
-            )
-            .build();
+                    sendMessage.setReplyToMessageId(ctx.update().getMessage().getMessageId());
+                    silent.execute(sendMessage);
+                })
+                .reply(
+                        upd -> {
+                            String[] split = upd.getMessage().getText().split(" #");
+                            if (split.length < 2 || !StringUtils.isNumeric(split[split.length - 1])) {
+                                return;
+                            }
+
+                            Long listId = Long.valueOf(split[split.length - 1]);
+                            Optional<ItemList> optionalItemList = listRepository.findById(listId);
+
+                            if (
+                                    optionalItemList.isPresent()
+                                            && optionalItemList.get().getChat().getId().equals(upd.getMessage().getChatId())
+                            ) {
+                                ItemList itemList = optionalItemList.get();
+                                SendMessage message = new SendMessage(upd.getMessage().getChatId().toString(), getFormattedList(itemList));
+                                message.setParseMode(ParseMode.HTML);
+                                silent.execute(message);
+                            }
+                        },
+                        isReplyToBot(),
+                        isReplyToMessage(SELECT_LIST_TO_SHOW)
+                )
+                .build();
     }
 
     protected String getFormattedList(ItemList itemList) {
@@ -276,7 +276,7 @@ public class ListBot extends AbilityBot {
                 row = new KeyboardRow();
             }
         }
-        if (! row.isEmpty()) {
+        if (!row.isEmpty()) {
             markupBuilder.keyboardRow(row);
         }
 
@@ -297,7 +297,7 @@ public class ListBot extends AbilityBot {
 
     private Predicate<Update> isReplyToBot() {
         return upd -> upd.getMessage().getChat().isUserChat()
-            || upd.getMessage().getReplyToMessage().getFrom().getUserName().equalsIgnoreCase(getBotUsername());
+                || upd.getMessage().getReplyToMessage().getFrom().getUserName().equalsIgnoreCase(getBotUsername());
     }
 
     private Predicate<Update> isNewItem() {
